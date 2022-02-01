@@ -4,9 +4,10 @@ const router = express.Router()
 const db = require('../../models')
 const Todo = db.Todo
 
-app.get('/todos/:id', (req, res) => {
+router.get('/todos/:id', (req, res) => {
+  const userId = req.user.id
   const id = req.params.id
-  return Todo.findByPk(id)
+  return Todo.findOne({where: {id, userId}})
     .then(todo => res.render('detail', { todo: todo.toJSON() }))
     .catch(error => console.log(error))
 })
@@ -17,17 +18,18 @@ router.get('/new', (req, res) => {
 })
 // post new
 router.post('/', (req, res) => {
-  const userId = req.user.id
+  const UserId = req.user.id
   const name = req.body.name
-  return Todo.create({ name, userId })
-    .then(()=> res.redirect('/'))
+
+  return Todo.create({ name, UserId })
+    .then(() => res.redirect('/'))
     .catch(error => console.log(error))
 })
 
 router.get('/:id', (req,res) => {
   const userId = req.user.id
-  const _id = req.params.id
-  return Todo.findByPk({_id, userId})
+  const id = req.params.id
+  return Todo.findOne({where: { id, userId}})
   
   .then((todo) => res.render('detail', { todo: todo.toJSON() }))
   .catch(error => console.log(error))
@@ -35,34 +37,33 @@ router.get('/:id', (req,res) => {
 
 // update get URL
 router.get('/:id/edit', (req,res) => {
-  const userId = req.user._id
-  const _id = req.params.id
-  return Todo.findByPk({_id, userId})
-  .lean()
-  .then((todo) => res.render('edit', { todo: todo.toJSON() }))
+  const userId = req.user.id
+  const id = req.params.id
+  return Todo.findOne( {where: {id, userId}})
+  .then((todo) => res.render('edit', { todo: todo.get() }))
   .catch(error => console.log(error))
 })
 // update post URL
 router.put('/:id', (req, res) => {
-  const userId = req.user._id
+  const userId = req.user.id
   const {name, isDone} = req.body //解構賦值, 一次定義好req.body內的變數 
-  const _id = req.params.id
-  return Todo.findByPk({_id, userId})
+  const id = req.params.id
+  return Todo.findOne( {where: {id, userId}})
     .then(todo => {
       todo.name = name
       //運算子優先序, 先比 isDone ==='on', 再將結果比對todo.isDone
       todo.isDone = isDone === 'on' 
       return todo.save()
     })
-    .then(() => res.redirect(`/todos/${_id}`))
+    .then(() => res.redirect(`/todos/${id}`))
     .catch(error => console.log(error))
 }) 
 // Remove post URL
 router.delete('/:id', (req, res) => {
-  const userId = req.user._id
-  const _id = req.params.id
-  return Todo.findByPk({_id, userId})
-    .then(todo => todo.remove())
+  const userId = req.user.id
+  const id = req.params.id
+  return Todo.findOne({where: {id, userId}})
+    .then(todo => todo.destroy())
     .then(() => res.redirect('/'))
     .catch(error => console.log(error))
 })
