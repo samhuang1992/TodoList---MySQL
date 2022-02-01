@@ -5,20 +5,26 @@ const {engine} = require('express-handlebars')
 const methodOverride = require('method-override')
 const bcrypt = require('bcryptjs')
 const flash = require('connect-flash')
+
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config()
+}
+
 // passport設定檔，要寫在 express-session後
 const usePassport = require('./config/passport')
 const db = require('./models')
 const User = db.User
 const Todo = db.Todo
+const routers = require('./routers')
 
 const app = express()
-const PORT = 3000
+const PORT = process.env.PORT
 
 app.engine('hbs', engine({ defaultLayout: 'main', extname: '.hbs' }))
 app.set('view engine', 'hbs')
 
 app.use(session({
-  secret: 'MySecret',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true
 }))
@@ -37,6 +43,8 @@ app.use((req, res, next)=> {
   res.locals.warning_msg = req.flash('warning_msg') //設定錯誤訊息
   next()
 })
+
+app.use(routers)
 
 app.listen(PORT, () => {
   console.log(`App is running on http://localhost:${PORT}`)
